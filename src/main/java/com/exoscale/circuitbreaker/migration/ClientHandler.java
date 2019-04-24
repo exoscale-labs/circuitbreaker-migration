@@ -1,7 +1,6 @@
 package com.exoscale.circuitbreaker.migration;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.vavr.control.Try;
 import org.springframework.web.servlet.function.ServerRequest;
 import org.springframework.web.servlet.function.ServerResponse;
 
@@ -23,8 +22,6 @@ class ClientHandler {
         var command = new ClientCommand(timeout, uri.toString());
         var cbDecorated = CircuitBreaker.decorateSupplier(cb, command::run);
         var cacheDecorated = Cache.decorateSupplier(cache, cbDecorated);
-        return Try.ofSupplier(cacheDecorated)
-                .map(result -> ServerResponse.ok().body(result))
-                .get();
+        return ServerResponse.ok().body(cacheDecorated.get());
     }
 }
