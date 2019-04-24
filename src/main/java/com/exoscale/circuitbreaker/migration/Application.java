@@ -20,10 +20,10 @@ public class Application {
     }
 
     @Bean
-    RouterFunction<ServerResponse> routes(CircuitBreaker cb) {
+    RouterFunction<ServerResponse> routes(CircuitBreaker cb, Cache<Long> cache) {
         return route()
                 .GET("/time", new TimeHandler()::time)
-                .GET("/", new ClientHandler(cb)::call)
+                .GET("/", new ClientHandler(cb, cache)::call)
                 .build();
     }
 
@@ -34,5 +34,10 @@ public class Application {
                 .waitDurationInOpenState(Duration.ofSeconds(20))
                 .build();
         return CircuitBreaker.of("circuit-breaker", cfg);
+    }
+
+    @Bean
+    Cache<Long> cache() {
+        return new Cache<>();
     }
 }

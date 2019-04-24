@@ -8,9 +8,11 @@ import org.springframework.web.servlet.function.ServerResponse;
 class ClientHandler {
 
     private final CircuitBreaker cb;
+    private final Cache<Long> cache;
 
-    ClientHandler(CircuitBreaker cb) {
+    ClientHandler(CircuitBreaker cb, Cache<Long> cache) {
         this.cb = cb;
+        this.cache = cache;
     }
 
     ServerResponse call(ServerRequest req) {
@@ -20,12 +22,9 @@ class ClientHandler {
         var uri = req.uriBuilder().path("/time").build();
         var command = new ClientCommand(timeout, uri.toString());
         var cbDecorated = CircuitBreaker.decorateSupplier(cb, command::run);
-        return Try.ofSupplier(cbDecorated)
-                .map(result -> ServerResponse
-                        .ok()
-                        .body(new Result.Live(result)))
-                .getOrElse(ServerResponse
-                        .ok()
-                        .body(new Result.Cached(command.getFallback())));
+        var cacheDecorated = Cache.decorateSupplier(cache, cbDecorated);
+        return Try.ofSupplier(cacheDecorated)
+                .map(result -> ServerResponse.ok().body(result))
+                .get();
     }
 }

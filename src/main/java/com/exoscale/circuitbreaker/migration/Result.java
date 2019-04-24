@@ -1,28 +1,28 @@
 package com.exoscale.circuitbreaker.migration;
 
-public interface Result {
+public interface Result<T> {
 
     String getSource();
-    Long getValue();
+    T getValue();
 
-    abstract class AbstractResult implements Result {
+    abstract class AbstractResult<T> implements Result<T> {
 
-        private final Long value;
+        private final T value;
 
-        AbstractResult(Long value) {
+        AbstractResult(T value) {
             this.value = value;
         }
 
         @Override
-        public Long getValue() {
+        public T getValue() {
             return value;
         }
 
     }
 
-    class Live extends AbstractResult {
+    class Live<T> extends AbstractResult<T> {
 
-        public Live(Long value) {
+        public Live(T value) {
             super(value);
         }
 
@@ -32,9 +32,9 @@ public interface Result {
         }
     }
 
-    class Cached extends AbstractResult {
+    class Cached<T> extends AbstractResult<T> {
 
-        public Cached(Long value) {
+        public Cached(T value) {
             super(value);
         }
 
