@@ -26,9 +26,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.netflix.hystrix</groupId>
-            <artifactId>hystrix-core</artifactId>
-            <version>1.5.18</version>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
+            <version>0.14.1</version>
         </dependency>
     </dependencies>
     <repositories>

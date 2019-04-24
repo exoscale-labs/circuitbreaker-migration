@@ -1,10 +1,14 @@
 package com.exoscale.circuitbreaker.migration;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
+
+import java.time.Duration;
 
 import static org.springframework.web.servlet.function.RouterFunctions.route;
 
@@ -16,11 +20,19 @@ public class Application {
     }
 
     @Bean
-    RouterFunction<ServerResponse> routes() {
+    RouterFunction<ServerResponse> routes(CircuitBreaker cb) {
         return route()
                 .GET("/time", new TimeHandler()::time)
-                .GET("/", new ClientHandler()::call)
+                .GET("/", new ClientHandler(cb)::call)
                 .build();
     }
 
+    @Bean
+    CircuitBreaker circuitBreaker() {
+        var cfg = CircuitBreakerConfig.custom()
+                .ringBufferSizeInClosedState(5)
+                .waitDurationInOpenState(Duration.ofSeconds(20))
+                .build();
+        return CircuitBreaker.of("circuit-breaker", cfg);
+    }
 }
