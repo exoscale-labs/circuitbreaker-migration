@@ -1,7 +1,7 @@
 package com.exoscale.circuitbreaker.migration;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
+import io.vavr.control.Try;
 import org.springframework.web.servlet.function.ServerRequest;
 import org.springframework.web.servlet.function.ServerResponse;
 
@@ -19,15 +19,13 @@ class ClientHandler {
                 .orElse(0);
         var uri = req.uriBuilder().path("/time").build();
         var command = new ClientCommand(timeout, uri.toString());
-        try {
-            var result = cb.executeSupplier(command::run);
-            return ServerResponse
-                    .ok()
-                    .body(new Result.Live(result));
-        } catch (CircuitBreakerOpenException e) {
-            return ServerResponse
-                    .ok()
-                    .body(new Result.Cached(command.getFallback()));
-        }
+        var cbDecorated = CircuitBreaker.decorateSupplier(cb, command::run);
+        return Try.ofSupplier(cbDecorated)
+                .map(result -> ServerResponse
+                        .ok()
+                        .body(new Result.Live(result)))
+                .getOrElse(ServerResponse
+                        .ok()
+                        .body(new Result.Cached(command.getFallback())));
     }
 }
