@@ -2,6 +2,7 @@ package com.exoscale.circuitbreaker.migration;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.timelimiter.TimeLimiter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -20,11 +21,16 @@ public class Application {
     }
 
     @Bean
-    RouterFunction<ServerResponse> routes(CircuitBreaker cb, Cache<Long> cache) {
+    RouterFunction<ServerResponse> routes(CircuitBreaker cb, TimeLimiter tl, Cache<Long> cache) {
         return route()
                 .GET("/time", new TimeHandler()::time)
-                .GET("/", new ClientHandler(cb, cache)::call)
+                .GET("/", new ClientHandler(cb, tl, cache)::call)
                 .build();
+    }
+
+    @Bean
+    TimeLimiter timeLimiter() {
+        return TimeLimiter.of(Duration.ofSeconds(1));
     }
 
     @Bean

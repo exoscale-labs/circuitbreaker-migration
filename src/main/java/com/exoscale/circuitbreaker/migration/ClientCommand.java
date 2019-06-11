@@ -4,6 +4,10 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import static org.springframework.http.HttpMethod.GET;
 
 class ClientCommand {
@@ -18,17 +22,20 @@ class ClientCommand {
         this.url = url;
     }
 
-    Long run() {
+    Future<Long> run() {
         var headers = new HttpHeaders();
         if (timeout > 0) {
             headers.add("timeout", String.valueOf(timeout));
         }
         var entity = new HttpEntity<>(null, headers);
-        var result = template
-                .exchange(url, GET, entity, Long.class)
-                .getBody();
-        cache = result;
-        return result;
+        var executor = Executors.newSingleThreadExecutor();
+        Callable<Long> callable = () -> {
+            cache = template
+                    .exchange(url, GET, entity, Long.class)
+                    .getBody();
+            return cache;
+        };
+        return executor.submit(callable);
     }
 
     Long getFallback() {
